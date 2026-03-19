@@ -1,12 +1,21 @@
+#Created By VoxelAxis Version 1.1
+
+
 from importlib.metadata import files
 import os
+from pickle import GET
 import shutil
 from sqlite3.dbapi2 import Timestamp
+from sys import version
 import zipfile
 from datetime import datetime
 from colorama import Fore
 
 #-----------Helper Functions----------
+
+#Software Version
+def GetVersionNumber():
+ return "Version 1.1"
 
 #CMD Functions
 def CLS():
@@ -82,6 +91,24 @@ def FilesToZip(folder_name):
           for file in files:
             file_path = os.path.join(root, file)
             zf.write(file_path, os.path.relpath(file_path, folder))
+            print(f"{green}Done!")
+
+def ZipUserFolders(folder_name):
+    CLS()
+    if not UserFolders:
+      print(f"{red}Nothing to backup, please choose folders")
+    else:
+     Timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+     print("Zipping Folder...")
+     folder_path = UserFolders
+     backup_file = os.path.join(desktop, f"{folder_name} {Timestamp}.zip")
+     with zipfile.ZipFile(backup_file, 'w') as zf:
+      for folder in UserFolders :
+       for root, dirs, files in os.walk(folder):
+        for file in files:
+         file_path = os.path.join(root, file)
+         zf.write(file_path, os.path.relpath(file_path, folder))
+         print(f"{green}Done!")
 
 
 def FolderViewingMenu():
@@ -90,19 +117,29 @@ def FolderViewingMenu():
     for folder in AllFolders:
         print(folder)
 
+
+def UserFolderViewingMenu():
+    CLS()
+    if not UserFolders:
+     print(f"{red}Folder has nothing to view...")
+    else:
+     for folder in UserFolders:
+      print(folder)
+
 def CreditsMenu():
     CLS()
-    print("Created By VoxelAxis")
+    print(f"{cyan}Created By VoxelAxis")
     print("")
     print("")
-    print("Documentation For Folder Zipping by : angelotommy006 on Scribd")
+    print(f"{cyan}Documentation For Folder Zipping by : angelotommy006 on Scribd")
     print("")
     print("")
-    print("Find us at VoxPy Solutions! https://discord.gg/9YvcRerxjz")
+    print(f"{cyan}Find us at VoxPy Solutions! https://discord.gg/9YvcRerxjz")
 
 
 #----------------UI-------------------
 def MainMenu():
+    versionNo = GetVersionNumber()
     while True:
      CLS()
      print(f"""{purple}@@@@@@@   @@@@@@   @@@@@@@ @@@  @@@  @@@@@@  @@@  @@@  @@@@@@ @@@@@@@ 
@@ -111,15 +148,19 @@ def MainMenu():
  !!:  !!! !!:  !!! :!!      !!: :!!   !!:     !!:  !!!     !:! !!:  !!!
  :: : ::   :   : :  :: :: :  :   ::: :.:: :::  :.:: :  ::.: :  :: : :: """)
      print("")
-     print("")
+     print(f"{cyan} {versionNo}")
      print("")
      print("")
      print("")
      print(f" {blue}[1] Backup To Zip               [2] Choose Folders")
      print("")
-     print(f" {blue}[3] View Folders                [4] Credits")
+     print(f" {blue}[3] View Folders                [4] View User Folders")
+     print("")
+     print(f" {blue}[5] Only Backup User Folders    [6] Credits")
+     print("")
      print("")
      print(f" {red}[0] Kill Application")
+     print("")
      print("")
      choice = input(f" {blue}-> ")
     
@@ -139,13 +180,22 @@ def MainMenu():
       input(f"{red}Press Enter...")
         
      elif choice == "4":
+       print(f"{green}Showing User Folder Locations")
+       UserFolderViewingMenu()
+       input(f"{red}Press Enter...")
+
+     elif choice == "5":
+       print(f"{green}Running Back2USB...")
+       ZipUserFolders(f'UserFolders-Back2USB')
+       input(f"{red}Press Enter...")
+
+     elif choice == "6":
       print(f"{green}Loading Credits...")
       CreditsMenu()
       input(f"{red}Press Enter...")
 
      elif choice == "0":
       print(f"{red}Killing Application...")
-      input(f"{red}Press Enter...")
       break
 
      
