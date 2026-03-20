@@ -1,4 +1,4 @@
-#Created By VoxelAxis Version 1.1
+#Created By VoxelAxis Version 1.2
 
 
 from importlib.metadata import files
@@ -10,12 +10,13 @@ from sys import version
 import zipfile
 from datetime import datetime
 from colorama import Fore
+from time import sleep
 
 #-----------Helper Functions----------
 
 #Software Version
 def GetVersionNumber():
- return "Version 1.1"
+ return "Version 1.2"
 
 #CMD Functions
 def CLS():
@@ -25,6 +26,50 @@ def run(cmd):
     """Run system command"""
     os.system(cmd)
 
+
+def MemoryAppData():
+    try:
+        base = os.getenv("LOCALAPPDATA")
+        
+        if base is None:
+            raise Exception("LOCALAPPDATA not found")
+
+        app_folder = os.path.join(base, "Back2USB")
+        os.makedirs(app_folder, exist_ok=True)
+
+        return app_folder
+
+    except Exception as e:
+        print(f"{red}Failed: {e}")
+        return None
+
+def SaveUserFolders():
+    appdata_path = MemoryAppData()
+
+    if appdata_path is None:
+        return
+    else:
+        save_file = os.path.join(appdata_path, "SaveData.txt")
+        with open(save_file, "w") as f:
+          for folder in UserFolders:
+            f.write(folder + "\n")
+    
+
+
+def LoadUserFolders():
+  appdata_path = MemoryAppData()
+
+  if appdata_path is None:
+    return
+  save_file = os.path.join(appdata_path, "SaveData.txt")
+  if not os.path.exists(save_file):
+      return
+
+  with open(save_file, "r") as f:
+     for line in f:
+        path = line.strip()
+        if path and path not in UserFolders:
+            UserFolders.append(path)
 
 #Colours
 red = Fore.RED
@@ -36,7 +81,7 @@ cyan = Fore.CYAN
 #Default Folders
 DefaultFolders = [
 
-    os.path.join(os.path.expanduser("~"), "Downloads"),
+    #os.path.join(os.path.expanduser("~"), "Downloads"), #Removed For Now because logically nobody needs (second hash incase i readd later)
     os.path.join(os.path.expanduser("~"), "Documents"),
     os.path.join(os.path.expanduser("~"), "Pictures"),
     os.path.join(os.path.expanduser("~"), "Videos")
@@ -69,50 +114,76 @@ def FolderChoosingMenu():
     print("")
     path = input(f" {blue}-> ")
     if(os.path.exists(path)):
+     if path not in UserFolders:
       print(f"{green}Added Path {path}")
       UserFolders.append(path)
+      SaveUserFolders()
       AllFolders = DefaultFolders + UserFolders
+    
+     else:
+         print(f"{red}Path Already Exists")
     else:
-        print(f"{red}Path Does Not Exist")
+     print(f"{red}Path Does Not Exist")
 
 
 
 def FilesToZip(folder_name):
     CLS()
+    LoadUserFolders()
     AllFolders = DefaultFolders + UserFolders
     Timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    print("Zipping Folder...")
-    folder_path = AllFolders
-    backup_file = os.path.join(desktop, f"{folder_name} {Timestamp}.zip")
+    print("Zipping Folders...")
 
+    backup_file = os.path.join(desktop, f"{folder_name} {Timestamp}.zip")
     with zipfile.ZipFile(backup_file, 'w') as zf:
-        for folder in AllFolders :
-         for root, dirs, files in os.walk(folder):
-          for file in files:
-            file_path = os.path.join(root, file)
-            zf.write(file_path, os.path.relpath(file_path, folder))
-            print(f"{green}Done!")
+        for folder in AllFolders:
+            if not os.path.exists(folder):
+                print(f"{red}Skipping {folder} (Folder Inaccessible or Not Found)")
+                continue
+
+            folder_base = os.path.basename(folder)
+            for root, dirs, files in os.walk(folder):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    try:
+                        rel_path = os.path.join(folder_base, os.path.relpath(file_path, folder))
+                        zf.write(file_path, rel_path)
+                    except Exception as e:
+                        print(f"{red}Failed to add {file_path}: {e}")
+
+    print(f"{green}Finished zipping all folders to {backup_file}")
 
 def ZipUserFolders(folder_name):
     CLS()
+    LoadUserFolders()
     if not UserFolders:
       print(f"{red}Nothing to backup, please choose folders")
     else:
      Timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-     print("Zipping Folder...")
-     folder_path = UserFolders
-     backup_file = os.path.join(desktop, f"{folder_name} {Timestamp}.zip")
-     with zipfile.ZipFile(backup_file, 'w') as zf:
-      for folder in UserFolders :
-       for root, dirs, files in os.walk(folder):
-        for file in files:
-         file_path = os.path.join(root, file)
-         zf.write(file_path, os.path.relpath(file_path, folder))
-         print(f"{green}Done!")
+    print("Zipping Folders...")
+
+    backup_file = os.path.join(desktop, f"{folder_name} {Timestamp}.zip")
+    with zipfile.ZipFile(backup_file, 'w') as zf:
+        for folder in UserFolders:
+            if not os.path.exists(folder):
+                print(f"{red}Skipping {folder} (Folder Inaccessible or Not Found)")
+                continue
+
+            folder_base = os.path.basename(folder)
+            for root, dirs, files in os.walk(folder):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    try:
+                        rel_path = os.path.join(folder_base, os.path.relpath(file_path, folder))
+                        zf.write(file_path, rel_path)
+                    except Exception as e:
+                        print(f"{red}Failed to add {file_path}: {e}")
+        print(f"{green}Finished zipping all folders to {backup_file}")
 
 
 def FolderViewingMenu():
     CLS()
+    LoadUserFolders()
     AllFolders = DefaultFolders + UserFolders
     for folder in AllFolders:
         print(folder)
@@ -120,6 +191,7 @@ def FolderViewingMenu():
 
 def UserFolderViewingMenu():
     CLS()
+    LoadUserFolders()
     if not UserFolders:
      print(f"{red}Folder has nothing to view...")
     else:
