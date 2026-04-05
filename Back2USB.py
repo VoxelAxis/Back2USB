@@ -205,8 +205,6 @@ def CreditsMenu():
     print("")
     print(f"{cyan}Documentation For Folder Zipping by : angelotommy006 on Scribd")
     print("")
-    print("")
-    print(f"{cyan}Find us at VoxPy Solutions! https://discord.gg/9YvcRerxjz")
 
 
 #----------------UI-------------------
